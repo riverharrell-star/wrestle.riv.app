@@ -49,10 +49,13 @@ st.markdown("""
 st.title("🤼‍♂️ WRESTLE AI")
 st.caption("AI-Powered Performance Ecosystem • Pro Tier Activated")
 # 1. Initialize Gemini Client
-@st.cache_resourcedef get_gemini_client():
+@st.cache_resource
+def get_gemini_client():
     return genai.Client()
+
 try:
-    client = get_gemini_client()except Exception:
+    client = get_gemini_client()
+except Exception:
     st.error("Please add your 'GEMINI_API_KEY' inside the Streamlit Advanced Settings dashboard to unlock AI models.")
 # ----------------------------------------------------# 🗂️ MASTER ALL-FEATURE TAB NAVIGATION# ----------------------------------------------------tabs = st.tabs(["🥋 AI Coach", "🔊 Flow", "📋 Daily Drills", "📊 Stats/Teams", "🔥 Impossible", "🍎 Fuel"])tab_video, tab_trainer, tab_drills, tab_stats, tab_impossible, tab_nutrition = tabs
 # ====================================================# FEATURES 1 & 2: MULTI-STYLE AI VIDEO ANALYSIS & GRAPHICS# ====================================================with tab_video:
