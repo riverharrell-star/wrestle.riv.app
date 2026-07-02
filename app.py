@@ -1,9 +1,3 @@
-To replicate all the core features of the [official Wrestle AI platform](https://wrestleai.app/), your application needs to transition from a basic helper script into an all-in-one athletic ecosystem.
-According to the official specifications for [Wrestle AI on the App Store](https://apps.apple.com/dz/app/wrestle-ai/id6751189075) and [Google Play](https://play.google.com/store/apps/details?id=app.rork.wrestleai), the platform is divided into specific structural components: Multi-Style AI Video Breakdown (Neutral, Top, Bottom, and Jiu-Jitsu transitions), Personalized Daily Drill Builders, Custom Team Performance Graphics, "Impossible Mode" Conditioning Challenges, and Interactive Match Score/Stat Trackers.
-Here is the complete production-grade app.py script. It features a complete UI reconstruction, customized mobile styling, and integrates every feature from the actual app.
-## 📥 Complete Wrestle AI Ecosystem Code
-Replace the entire contents of your GitHub app.py file with this script:
-
 # filename: app.pyimport streamlit as stimport osimport timeimport randomimport streamlit.components.v1 as componentsfrom google import genaifrom google.genai import types
 # ----------------------------------------------------# 📱 IOS NATIVE LOOK & FEEL CONFIGURATION# ----------------------------------------------------
 st.set_page_config(
