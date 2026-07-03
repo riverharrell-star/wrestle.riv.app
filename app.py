@@ -2,38 +2,26 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # =========================
-# PAGE SETUP (FULL SCREEN FIX)
+# PAGE CONFIG (FULL WIDTH FIX)
 # =========================
 
 st.set_page_config(
     page_title="Wrestle AI Pro",
     page_icon="🥋",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
-# FULL WIDTH + MOBILE FIX
 st.markdown("""
 <style>
-
-html, body {
-    width: 100% !important;
-}
-
 .block-container {
-    padding: 0.5rem 1rem 2rem 1rem !important;
-    max-width: 100% !important;
+    padding: 1rem;
+    max-width: 100%;
 }
-
-main {
-    width: 100% !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🥋 Wrestle AI Pro")
-st.caption("Offline Wrestling Training System (No API Required)")
+st.caption("Fully Working Offline Wrestling Trainer")
 
 # =========================
 # TABS
@@ -50,7 +38,7 @@ tabs = st.tabs([
 coach_tab, voice_tab, drills_tab, stats_tab, nutrition_tab = tabs
 
 # =========================
-# COACH
+# COACH (NO API)
 # =========================
 
 with coach_tab:
@@ -65,39 +53,39 @@ with coach_tab:
 
         q = question.lower()
 
-        tips = []
+        output = []
 
-        if "shoot" in q or "takedown" in q:
-            tips.append("Work on level changes + penetration step + finishing to the corner")
+        if "takedown" in q or "shoot" in q:
+            output.append("Improve level changes + penetration step + finish to corner")
 
         if "tired" in q or "gas" in q:
-            tips.append("Do sprint intervals (20s work / 40s rest)")
+            output.append("Do sprint intervals (20s on / 40s off) for conditioning")
 
         if "defense" in q:
-            tips.append("Sprawl early + strong head position")
+            output.append("Focus on sprawl timing + head position")
 
         if position == "Top":
-            tips.append("Use wrist control + pressure breakdowns")
+            output.append("Use wrist control + pressure breakdowns")
 
         if position == "Bottom":
-            tips.append("Focus on stand-ups + hip heists")
+            output.append("Work stand-ups + hip heists")
 
-        if not tips:
-            tips.append("Work stance, motion, hand fighting, and pressure")
+        if not output:
+            output.append("Focus on stance, motion, and hand fighting")
 
         st.write("### Advice")
-        for t in tips:
-            st.write("•", t)
+        for o in output:
+            st.write("•", o)
 
 # =========================
-# VOICE TRAINER
+# VOICE TRAINER (FIXED SIZE)
 # =========================
 
 with voice_tab:
 
     st.subheader("Voice Stance Trainer")
 
-    seconds = st.number_input("Round Time (sec)", 30, 300, 60)
+    seconds = st.number_input("Round Time", 30, 300, 60)
 
     html = f"""
     <div style="text-align:center;padding:20px;background:#111;color:white;border-radius:12px;">
@@ -115,43 +103,43 @@ with voice_tab:
 
     const moves = ["Sprawl", "Shoot", "Circle", "Level Change", "Snap Down"];
 
-    function speak(t){
+    function speak(t){{
         let msg = new SpeechSynthesisUtterance(t);
         msg.rate = 1.2;
         speechSynthesis.speak(msg);
-    }
+    }}
 
-    function start(){
+    function start(){{
         if(running) return;
         running = true;
         time = {seconds};
 
-        interval = setInterval(() => {
+        interval = setInterval(() => {{
             time--;
             document.getElementById("time").innerText = time;
             if(time <= 0) stop();
-        }, 1000);
+        }}, 1000);
 
         loop();
-    }
+    }}
 
-    function loop(){
+    function loop(){{
         if(!running) return;
         let m = moves[Math.floor(Math.random()*moves.length)];
         document.getElementById("cmd").innerText = m;
         speak(m);
         setTimeout(loop, 2000);
-    }
+    }}
 
-    function stop(){
+    function stop(){{
         running = false;
         clearInterval(interval);
         speechSynthesis.cancel();
-    }
+    }}
     </script>
     """
 
-    components.html(html, height=520)
+    components.html(html, height=500)
 
 # =========================
 # DRILLS
@@ -159,21 +147,21 @@ with voice_tab:
 
 with drills_tab:
 
-    st.subheader("Drill Generator")
+    st.subheader("Drill Builder")
 
     level = st.selectbox("Level", ["Beginner", "High School", "College"])
-    focus = st.text_input("Focus", "Double leg takedown")
+    focus = st.text_input("Focus", "Double leg")
 
-    if st.button("Generate Drills"):
+    if st.button("Generate"):
 
         base = {
             "Beginner": [
-                "Stance & motion",
+                "Stance + motion (5 min)",
                 "Basic shots (3x10)",
                 "Wall pressure drill"
             ],
             "High School": [
-                "Shot → finish chains",
+                "Shot → finish chain",
                 "Hand fighting rounds",
                 "Live situational starts"
             ],
@@ -196,8 +184,8 @@ with stats_tab:
 
     st.subheader("Match Stats")
 
-    shots = st.number_input("Shots", 0, 100, 5)
-    finishes = st.number_input("Finishes", 0, 100, 2)
+    shots = st.number_input("Shots", 0, 50, 5)
+    finishes = st.number_input("Finishes", 0, 50, 2)
 
     if st.button("Calculate"):
 
@@ -206,9 +194,9 @@ with stats_tab:
         st.metric("Finish Rate", f"{rate:.1f}%")
 
         if rate < 40:
-            st.warning("Improve finishing angles + drive-through pressure")
+            st.warning("Work on finishing angles")
         else:
-            st.success("Good offensive efficiency")
+            st.success("Good offense")
 
 # =========================
 # NUTRITION
@@ -218,22 +206,22 @@ with nutrition_tab:
 
     st.subheader("Weight Cut Planner")
 
-    current = st.number_input("Current Weight", 100.0)
-    target = st.number_input("Target Weight", 100.0)
-    days = st.number_input("Days", 1)
+    w = st.number_input("Current Weight", 100.0)
+    t = st.number_input("Target Weight", 100.0)
+    d = st.number_input("Days", 1)
 
     if st.button("Plan"):
 
-        diff = current - target
+        diff = w - t
 
         if diff <= 0:
-            st.success("You are already on weight")
+            st.success("You are on weight")
         else:
             st.metric("Total Cut", f"{diff:.1f} lbs")
-            st.metric("Per Day", f"{diff/days:.2f} lbs/day")
+            st.metric("Per Day", f"{diff/d:.2f} lbs/day")
 
             st.write("### Plan")
-            st.write("• Clean diet (low sugar)")
-            st.write("• Water early, taper late")
-            st.write("• Daily light cardio")
-            st.write("• High protein intake")
+            st.write("• Reduce sugar + junk food")
+            st.write("• Increase water early, taper late")
+            st.write("• Light cardio daily")
+            st.write("• Keep protein high")
