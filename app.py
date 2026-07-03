@@ -1,82 +1,40 @@
- # ============================================
-# Wrestle AI Pro
-# Part 1/4
-# ============================================
-
+import streamlit as st
 import os
 import time
 import tempfile
-
-import streamlit as st
+from google import genai
 import streamlit.components.v1 as components
 
-from google import genai
-
-# ----------------------------
-# Page Setup
-# ----------------------------
+# =========================
+# PAGE SETUP
+# =========================
 
 st.set_page_config(
     page_title="Wrestle AI Pro",
-    page_icon="🤼",
-    layout="centered",
-    initial_sidebar_state="collapsed"
+    page_icon="🥋",
+    layout="centered"
 )
 
-st.markdown("""
-<style>
+st.title("🥋 Wrestle AI Pro")
+st.caption("AI Wrestling Training System")
 
-[data-testid="stHeader"]{
-display:none;
-}
-
-.main .block-container{
-padding-top:1rem;
-padding-bottom:2rem;
-max-width:900px;
-}
-
-.feature-card{
-background:#151922;
-padding:20px;
-border-radius:16px;
-border:1px solid #333;
-margin-bottom:15px;
-}
-
-div.stButton > button{
-width:100%;
-border-radius:12px;
-height:50px;
-font-weight:bold;
-background:#ff2f63;
-color:white;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-st.title("🤼 Wrestle AI Pro")
-st.caption("AI Wrestling Performance System")
-
-# ----------------------------
-# Gemini Client
-# ----------------------------
+# =========================
+# GEMINI CLIENT
+# =========================
 
 @st.cache_resource
 def get_client():
-    api_key = st.secrets["GEMINI_API_KEY"]
-    return genai.Client(api_key=api_key)
+    return genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 try:
     client = get_client()
 except Exception:
-    st.error("Missing GEMINI_API_KEY in Streamlit Secrets.")
+    st.error("Missing GEMINI_API_KEY in Streamlit secrets.")
     st.stop()
 
-# ----------------------------
-# Navigation
-# ----------------------------
+# =========================
+# TABS
+# =========================
 
 tabs = st.tabs([
     "🤖 Coach",
@@ -89,448 +47,248 @@ tabs = st.tabs([
 
 coach_tab, video_tab, voice_tab, drills_tab, stats_tab, nutrition_tab = tabs
 
-# =====================================
-# COACH TAB
-# =====================================
+# =========================
+# 🤖 COACH
+# =========================
 
 with coach_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>AI Wrestling Coach</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("AI Wrestling Coach")
 
     style = st.selectbox(
         "Style",
-        [
-            "Folkstyle",
-            "Freestyle",
-            "Greco Roman",
-            "BJJ"
-        ]
+        ["Folkstyle", "Freestyle", "Greco", "BJJ"]
     )
 
     position = st.selectbox(
         "Position",
-        [
-            "Neutral",
-            "Top",
-            "Bottom",
-            "Scramble"
-        ]
+        ["Neutral", "Top", "Bottom", "Scramble"]
     )
 
-    question = st.text_area(
-        "Ask your coach anything..."
-    )
+    question = st.text_area("Ask a question")
 
-    if st.button("Ask Coach"):
+    if st.button("Ask Coach") and question:
 
         prompt = f"""
 You are an elite wrestling coach.
 
-Style:
-{style}
+Style: {style}
+Position: {position}
 
-Position:
-{position}
+Question: {question}
 
-Question:
-{question}
-
-Give technical coaching,
-mistakes,
-drills,
-and match strategy.
+Give:
+- technical advice
+- mistakes
+- drills
+- strategy
 """
 
         with st.spinner("Thinking..."):
 
-            response = client.models.generate_content(
+            res = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt
             )
 
-            st.markdown(response.text)
+            st.write(res.text)
 
-# =====================================
-# VIDEO TAB
-# =====================================
+# =========================
+# 🎥 VIDEO ANALYSIS
+# =========================
 
 with video_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>Video Analysis</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("Match Video Analysis")
 
-    uploaded = st.file_uploader(
-        "Upload Match Video",
-        type=["mp4", "mov", "m4v"]
-    )
+    video = st.file_uploader("Upload video", type=["mp4", "mov", "m4v"])
 
-    if uploaded:
+    if video:
 
-        st.video(uploaded)
+        st.video(video)
 
-        if st.button("Analyze Match"):
+        if st.button("Analyze Video"):
 
-            with st.spinner("Uploading..."):
+            with st.spinner("Processing..."):
 
                 with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    tmp.write(video.read())
+                    path = tmp.name
 
-                    tmp.write(uploaded.read())
-
-                    temp_name = tmp.name
-
-            try:
-
-                video = client.files.upload(
-                    file=temp_name
-                )
+                uploaded = client.files.upload(file=path)
 
                 while True:
-
-                    status = client.files.get(
-                        name=video.name
-                    )
-
+                    status = client.files.get(name=uploaded.name)
                     if status.state.name != "PROCESSING":
                         break
-
                     time.sleep(2)
 
                 prompt = """
-Analyze this wrestling match.
+Analyze this wrestling match:
 
-Return:
-
-Overall Score
-
-Strengths
-
-Weaknesses
-
-Takedown opportunities
-
-Defense issues
-
-Conditioning
-
-Three drills
-
-Final coaching summary.
+- strengths
+- weaknesses
+- takedowns
+- defense issues
+- conditioning
+- 3 drills
 """
 
-                response = client.models.generate_content(
+                res = client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=[
-                        video,
-                        prompt
-                    ]
+                    contents=[uploaded, prompt]
                 )
 
-                st.success("Analysis Complete")
+                st.success("Done")
+                st.write(res.text)
 
-                st.markdown(response.text)
-
-                client.files.delete(
-                    name=video.name
-                )
-
-            finally:
-
-                if os.path.exists(temp_name):
-                    os.remove(temp_name)
-# ============================================
-# Part 2/4 - Voice Trainer + Drill Generator
-# ============================================
+                client.files.delete(name=uploaded.name)
 
 # =========================
-# VOICE TRAINER TAB
+# 🎤 VOICE TRAINER
 # =========================
 
 with voice_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>Voice Stance Trainer</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("Voice Stance Trainer")
 
-    round_time = st.number_input(
-        "Round Time (seconds)",
-        min_value=20,
-        max_value=300,
-        value=60,
-        step=10
-    )
+    seconds = st.number_input("Round Time", 30, 300, 60)
 
     html = f"""
-    <div style="background:#111;padding:20px;border-radius:12px;text-align:center;color:white;">
-        <h1 id="cmd" style="color:#ff2f63;">READY</h1>
-        <p id="time">{round_time}</p>
+    <div style="text-align:center;padding:20px;background:#111;color:white;border-radius:12px;">
+        <h2 id="cmd">READY</h2>
+        <p id="time">{seconds}</p>
 
-        <button onclick="startRound()" style="width:100%;padding:12px;border:none;border-radius:10px;background:green;color:white;font-weight:bold;">
-            Start
-        </button>
-
-        <button onclick="stopRound()" style="width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;background:red;color:white;font-weight:bold;">
-            Stop
-        </button>
+        <button onclick="start()">Start</button>
+        <button onclick="stop()">Stop</button>
     </div>
 
     <script>
-    let time = {round_time};
+    let time = {seconds};
     let running = false;
     let interval;
 
-    const moves = [
-        "Sprawl",
-        "Shoot",
-        "Circle Left",
-        "Circle Right",
-        "Level Change",
-        "Snap Down",
-        "Hand Fight"
-    ];
+    const moves = ["Sprawl", "Shoot", "Circle", "Level Change", "Snap Down"];
 
-    function speak(text){
-        let msg = new SpeechSynthesisUtterance(text);
+    function speak(t){{
+        let msg = new SpeechSynthesisUtterance(t);
         msg.rate = 1.2;
         speechSynthesis.speak(msg);
-    }
+    }}
 
-    function startRound(){
+    function start(){{
         if(running) return;
         running = true;
-        time = {round_time};
+        time = {seconds};
 
-        interval = setInterval(() => {
+        interval = setInterval(() => {{
             time--;
             document.getElementById("time").innerText = time;
+            if(time <= 0) stop();
+        }}, 1000);
 
-            if(time <= 0){
-                stopRound();
-                speak("Round over");
-            }
-        }, 1000);
+        loop();
+    }}
 
-        loopMoves();
-    }
-
-    function loopMoves(){
+    function loop(){{
         if(!running) return;
+        let m = moves[Math.floor(Math.random()*moves.length)];
+        document.getElementById("cmd").innerText = m;
+        speak(m);
+        setTimeout(loop, 2000);
+    }}
 
-        let move = moves[Math.floor(Math.random() * moves.length)];
-        document.getElementById("cmd").innerText = move;
-        speak(move);
-
-        setTimeout(loopMoves, Math.random() * 2000 + 1000);
-    }
-
-    function stopRound(){
+    function stop(){{
         running = false;
         clearInterval(interval);
-    }
+        speechSynthesis.cancel();
+    }}
     </script>
     """
 
     components.html(html, height=300)
 
-
 # =========================
-# DRILL GENERATOR TAB
+# 📋 DRILLS
 # =========================
 
 with drills_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>AI Drill Generator</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("AI Drill Generator")
 
     level = st.selectbox(
-        "Skill Level",
-        ["Beginner", "High School", "College", "Advanced"]
+        "Level",
+        ["Beginner", "High School", "College"]
     )
 
-    focus = st.text_input(
-        "Focus Area",
-        value="Double leg takedown"
-    )
+    focus = st.text_input("Focus", "Double leg takedown")
 
     if st.button("Generate Drills"):
 
         prompt = f"""
-Create a wrestling training plan.
+Create wrestling drills:
 
 Level: {level}
 Focus: {focus}
 
-Include:
-- Warmup
-- Technique drills
-- Live situational drills
-- Conditioning
-- Coaching points
-
-Make it structured for 30 minutes.
+Include warmup, technique, live drilling, conditioning.
 """
 
-        with st.spinner("Generating drills..."):
+        res = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-
-            st.markdown(response.text)
-# ============================================
-# Part 3/4 - Stats + Conditioning
-# ============================================
+        st.write(res.text)
 
 # =========================
-# STATS TAB
+# 📊 STATS
 # =========================
 
 with stats_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>Match Stats Tracker</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("Match Stats")
 
-    shots = st.number_input("Shot Attempts", min_value=0, value=5)
-    finishes = st.number_input("Shots Finished", min_value=0, value=2)
-    escapes = st.number_input("Escapes", min_value=0, value=1)
-    reversals = st.number_input("Reversals", min_value=0, value=0)
+    shots = st.number_input("Shots", 0, 50, 5)
+    finishes = st.number_input("Finishes", 0, 50, 2)
 
-    if st.button("Calculate Performance"):
+    if st.button("Calculate"):
 
-        takedown_rate = (finishes / shots * 100) if shots > 0 else 0
+        rate = (finishes / shots * 100) if shots > 0 else 0
 
-        st.metric("Takedown Efficiency", f"{takedown_rate:.1f}%")
-        st.metric("Total Scoring Actions", finishes + escapes + reversals)
-
-        if takedown_rate < 40:
-            st.warning("Focus: penetration step + finishing angles")
-        elif takedown_rate < 70:
-            st.info("Good base — refine finishes under pressure")
-        else:
-            st.success("Elite efficiency — maintain pressure style")
-
+        st.metric("Finish Rate", f"{rate:.1f}%")
 
 # =========================
-# CONDITIONING TAB
-# =========================
-
-with st.expander("🔥 Impossible Mode Conditioning"):
-
-    st.markdown(
-        '<div class="feature-card"><h3>Impossible Mode</h3></div>',
-        unsafe_allow_html=True
-    )
-
-    mode = st.selectbox(
-        "Conditioning Type",
-        [
-            "Late Match Burnout",
-            "Explosive Shots",
-            "Grip Strength Fatigue",
-            "No Rest Scrambles"
-        ]
-    )
-
-    if st.button("Generate Workout"):
-
-        prompt = f"""
-Create a brutal wrestling conditioning workout.
-
-Type: {mode}
-
-Include:
-- warmup
-- main circuit
-- rest intervals
-- mental toughness cues
-- duration 20-30 minutes
-
-Make it intense but safe for athletes.
-"""
-
-        with st.spinner("Building workout..."):
-
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-
-            st.markdown(response.text)
-# ============================================
-# Part 4/4 - Nutrition + Final System
-# ============================================
-
-# =========================
-# NUTRITION TAB
+# 🍎 NUTRITION
 # =========================
 
 with nutrition_tab:
 
-    st.markdown(
-        '<div class="feature-card"><h3>Weight Cut & Nutrition Planner</h3></div>',
-        unsafe_allow_html=True
-    )
+    st.subheader("Weight Cut Planner")
 
-    current_weight = st.number_input("Current Weight (lbs)", value=150.0)
-    target_weight = st.number_input("Target Weight (lbs)", value=145.0)
-    days_left = st.number_input("Days Until Weigh-In", min_value=1, value=7)
+    w = st.number_input("Current Weight", 100.0)
+    t = st.number_input("Target Weight", 100.0)
+    d = st.number_input("Days", 1)
 
-    food_log = st.text_area(
-        "Today's Food Intake",
-        value="Chicken, rice, vegetables, protein shake"
-    )
+    if st.button("Plan"):
 
-    if st.button("Generate Nutrition Plan"):
+        diff = w - t
 
-        weight_diff = current_weight - target_weight
-
-        if weight_diff <= 0:
-            st.success("You are already on weight. Focus on recovery + performance.")
+        if diff <= 0:
+            st.success("You are on weight")
         else:
-            st.metric("Total Weight to Cut", f"{weight_diff:.1f} lbs")
-            st.metric("Daily Cut Target", f"{weight_diff/days_left:.2f} lbs/day")
+            st.metric("To Cut", f"{diff:.1f} lbs")
+            st.metric("Per Day", f"{diff/d:.2f}")
 
-            prompt = f"""
-You are a sports nutrition coach for wrestlers.
-
-Current weight: {current_weight}
-Target weight: {target_weight}
-Days left: {days_left}
-Food log: {food_log}
-
-Give:
-- safe calorie guidance
-- hydration strategy
-- performance-safe weight cut plan
-- what to avoid
-- match day fueling tips
-
-Keep it safe and athlete-focused.
+        prompt = f"""
+Wrestler cut plan:
+From {w} to {t} in {d} days.
+Give safe nutrition plan.
 """
 
-            with st.spinner("Calculating plan..."):
+        res = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
 
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt
-                )
-
-                st.markdown(response.text)
-
-
-# =========================
-# FINAL CLEANUP / FOOTER
-# =========================
-
-st.markdown("---")
-st.caption("Wrestle AI Pro • Streamlit Prototype • Mobile Optimized Build")
+        st.write(res.text)
