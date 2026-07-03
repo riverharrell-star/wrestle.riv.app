@@ -1,36 +1,18 @@
 import streamlit as st
-import os
-import time
-import tempfile
-from google import genai
 import streamlit.components.v1 as components
 
 # =========================
-# PAGE SETUP
+# PAGE
 # =========================
 
 st.set_page_config(
-    page_title="Wrestle AI Pro",
+    page_title="Wrestle AI Pro (No API)",
     page_icon="🥋",
     layout="centered"
 )
 
-st.title("🥋 Wrestle AI Pro")
-st.caption("AI Wrestling Training System")
-
-# =========================
-# GEMINI CLIENT
-# =========================
-
-@st.cache_resource
-def get_client():
-    return genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-
-try:
-    client = get_client()
-except Exception:
-    st.error("Missing GEMINI_API_KEY in Streamlit secrets.")
-    st.stop()
+st.title("🥋 Wrestle AI Pro (Offline Mode)")
+st.caption("No API required — fully local version")
 
 # =========================
 # TABS
@@ -38,111 +20,53 @@ except Exception:
 
 tabs = st.tabs([
     "🤖 Coach",
-    "🎥 Video",
     "🎤 Voice",
     "📋 Drills",
     "📊 Stats",
     "🍎 Nutrition"
 ])
 
-coach_tab, video_tab, voice_tab, drills_tab, stats_tab, nutrition_tab = tabs
+coach_tab, voice_tab, drills_tab, stats_tab, nutrition_tab = tabs
 
 # =========================
-# 🤖 COACH
+# 🤖 COACH (RULE BASED)
 # =========================
 
 with coach_tab:
 
-    st.subheader("AI Wrestling Coach")
+    st.subheader("AI Wrestling Coach (Offline)")
 
-    style = st.selectbox(
-        "Style",
-        ["Folkstyle", "Freestyle", "Greco", "BJJ"]
-    )
+    style = st.selectbox("Style", ["Folkstyle", "Freestyle", "Greco", "BJJ"])
+    position = st.selectbox("Position", ["Neutral", "Top", "Bottom", "Scramble"])
+    question = st.text_area("Ask something")
 
-    position = st.selectbox(
-        "Position",
-        ["Neutral", "Top", "Bottom", "Scramble"]
-    )
+    if st.button("Ask Coach"):
 
-    question = st.text_area("Ask a question")
+        q = question.lower()
 
-    if st.button("Ask Coach") and question:
+        advice = []
 
-        prompt = f"""
-You are an elite wrestling coach.
+        if "shoot" in q or "takedown" in q:
+            advice.append("Work level changes + penetration step + finish to corner")
 
-Style: {style}
-Position: {position}
+        if "gas" in q or "tired" in q:
+            advice.append("Improve conditioning: short explosive circuits (20–30 sec bursts)")
 
-Question: {question}
+        if "defense" in q:
+            advice.append("Sprawl early, head position, and underhook recovery")
 
-Give:
-- technical advice
-- mistakes
-- drills
-- strategy
-"""
+        if "top" in position.lower():
+            advice.append("Focus on wrist control + breakdown pressure")
 
-        with st.spinner("Thinking..."):
+        if "bottom" in position.lower():
+            advice.append("Stand-ups, hip heist, and hand fighting")
 
-            res = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
+        if not advice:
+            advice.append("Focus on fundamentals: stance, motion, hand fighting, and pressure")
 
-            st.write(res.text)
-
-# =========================
-# 🎥 VIDEO ANALYSIS
-# =========================
-
-with video_tab:
-
-    st.subheader("Match Video Analysis")
-
-    video = st.file_uploader("Upload video", type=["mp4", "mov", "m4v"])
-
-    if video:
-
-        st.video(video)
-
-        if st.button("Analyze Video"):
-
-            with st.spinner("Processing..."):
-
-                with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                    tmp.write(video.read())
-                    path = tmp.name
-
-                uploaded = client.files.upload(file=path)
-
-                while True:
-                    status = client.files.get(name=uploaded.name)
-                    if status.state.name != "PROCESSING":
-                        break
-                    time.sleep(2)
-
-                prompt = """
-Analyze this wrestling match:
-
-- strengths
-- weaknesses
-- takedowns
-- defense issues
-- conditioning
-- 3 drills
-"""
-
-                res = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[uploaded, prompt]
-                )
-
-                st.success("Done")
-                st.write(res.text)
-
-                client.files.delete(name=uploaded.name)
+        st.write("### Coaching Advice")
+        for a in advice:
+            st.write("•", a)
 
 # =========================
 # 🎤 VOICE TRAINER
@@ -209,37 +133,42 @@ with voice_tab:
     components.html(html, height=300)
 
 # =========================
-# 📋 DRILLS
+# 📋 DRILLS (LOCAL GENERATOR)
 # =========================
 
 with drills_tab:
 
-    st.subheader("AI Drill Generator")
+    st.subheader("Drill Generator")
 
-    level = st.selectbox(
-        "Level",
-        ["Beginner", "High School", "College"]
-    )
-
-    focus = st.text_input("Focus", "Double leg takedown")
+    level = st.selectbox("Level", ["Beginner", "High School", "College"])
+    focus = st.text_input("Focus", "Double leg")
 
     if st.button("Generate Drills"):
 
-        prompt = f"""
-Create wrestling drills:
+        drills = {
+            "Beginner": [
+                "Stance & motion (5 min)",
+                "Level change reps (3x20)",
+                "Basic shot entries",
+                "Wall wrestling pressure drill"
+            ],
+            "High School": [
+                "Penetration step series",
+                "Shot → finish chain drilling",
+                "Live situational starts",
+                "Hand fighting rounds"
+            ],
+            "College": [
+                "Chain wrestling sequences",
+                "Scramble recovery drills",
+                "Short offense bursts",
+                "Mat return pressure drill"
+            ]
+        }
 
-Level: {level}
-Focus: {focus}
-
-Include warmup, technique, live drilling, conditioning.
-"""
-
-        res = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
-        st.write(res.text)
+        st.write("### Plan")
+        for d in drills[level]:
+            st.write("•", d)
 
 # =========================
 # 📊 STATS
@@ -258,6 +187,11 @@ with stats_tab:
 
         st.metric("Finish Rate", f"{rate:.1f}%")
 
+        if rate < 40:
+            st.warning("Work on finishing angles and driving through")
+        else:
+            st.success("Good offensive efficiency")
+
 # =========================
 # 🍎 NUTRITION
 # =========================
@@ -275,20 +209,13 @@ with nutrition_tab:
         diff = w - t
 
         if diff <= 0:
-            st.success("You are on weight")
+            st.success("You are already on weight")
         else:
-            st.metric("To Cut", f"{diff:.1f} lbs")
-            st.metric("Per Day", f"{diff/d:.2f}")
+            st.metric("Total Cut", f"{diff:.1f} lbs")
+            st.metric("Per Day", f"{diff/d:.2f} lbs/day")
 
-        prompt = f"""
-Wrestler cut plan:
-From {w} to {t} in {d} days.
-Give safe nutrition plan.
-"""
-
-        res = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
-        st.write(res.text)
+            st.write("### Basic Plan")
+            st.write("• Reduce sugar + processed foods")
+            st.write("• Increase water early, taper before weigh-in")
+            st.write("• Maintain protein for muscle retention")
+            st.write("• Light cardio daily (20–30 min)")
