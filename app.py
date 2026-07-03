@@ -2,74 +2,83 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # =========================
-# PAGE
+# PAGE CONFIG (FULL WIDTH FIX)
 # =========================
 
 st.set_page_config(
-    page_title="Wrestle AI Pro (No API)",
+    page_title="Wrestle AI Pro",
     page_icon="🥋",
-    layout="centered"
+    layout="wide"
 )
 
-st.title("🥋 Wrestle AI Pro (Offline Mode)")
-st.caption("No API required — fully local version")
+st.markdown("""
+<style>
+.block-container {
+    padding: 1rem;
+    max-width: 100%;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🥋 Wrestle AI Pro")
+st.caption("Fully Working Offline Wrestling Trainer")
 
 # =========================
 # TABS
 # =========================
 
 tabs = st.tabs([
-    "🤖 Coach",
-    "🎤 Voice",
-    "📋 Drills",
-    "📊 Stats",
-    "🍎 Nutrition"
+    "Coach",
+    "Voice",
+    "Drills",
+    "Stats",
+    "Nutrition"
 ])
 
 coach_tab, voice_tab, drills_tab, stats_tab, nutrition_tab = tabs
 
 # =========================
-# 🤖 COACH (RULE BASED)
+# COACH (NO API)
 # =========================
 
 with coach_tab:
 
-    st.subheader("AI Wrestling Coach (Offline)")
+    st.subheader("Wrestling Coach")
 
     style = st.selectbox("Style", ["Folkstyle", "Freestyle", "Greco", "BJJ"])
     position = st.selectbox("Position", ["Neutral", "Top", "Bottom", "Scramble"])
-    question = st.text_area("Ask something")
+    question = st.text_area("Ask a question")
 
-    if st.button("Ask Coach"):
+    if st.button("Get Advice"):
 
         q = question.lower()
 
-        advice = []
+        output = []
 
-        if "shoot" in q or "takedown" in q:
-            advice.append("Work level changes + penetration step + finish to corner")
+        if "takedown" in q or "shoot" in q:
+            output.append("Improve level changes + penetration step + finish to corner")
 
-        if "gas" in q or "tired" in q:
-            advice.append("Improve conditioning: short explosive circuits (20–30 sec bursts)")
+        if "tired" in q or "gas" in q:
+            output.append("Do sprint intervals (20s on / 40s off) for conditioning")
 
         if "defense" in q:
-            advice.append("Sprawl early, head position, and underhook recovery")
+            output.append("Focus on sprawl timing + head position")
 
-        if "top" in position.lower():
-            advice.append("Focus on wrist control + breakdown pressure")
+        if position == "Top":
+            output.append("Use wrist control + pressure breakdowns")
 
-        if "bottom" in position.lower():
-            advice.append("Stand-ups, hip heist, and hand fighting")
+        if position == "Bottom":
+            output.append("Work stand-ups + hip heists")
 
-        if not advice:
-            advice.append("Focus on fundamentals: stance, motion, hand fighting, and pressure")
+        if not output:
+            output.append("Focus on stance, motion, and hand fighting")
 
-        st.write("### Coaching Advice")
-        for a in advice:
-            st.write("•", a)
+        st.write("### Advice")
+        for o in output:
+            st.write("•", o)
 
 # =========================
-# 🎤 VOICE TRAINER
+# VOICE TRAINER (FIXED SIZE)
 # =========================
 
 with voice_tab:
@@ -130,48 +139,45 @@ with voice_tab:
     </script>
     """
 
-    components.html(html, height=300)
+    components.html(html, height=500)
 
 # =========================
-# 📋 DRILLS (LOCAL GENERATOR)
+# DRILLS
 # =========================
 
 with drills_tab:
 
-    st.subheader("Drill Generator")
+    st.subheader("Drill Builder")
 
     level = st.selectbox("Level", ["Beginner", "High School", "College"])
     focus = st.text_input("Focus", "Double leg")
 
-    if st.button("Generate Drills"):
+    if st.button("Generate"):
 
-        drills = {
+        base = {
             "Beginner": [
-                "Stance & motion (5 min)",
-                "Level change reps (3x20)",
-                "Basic shot entries",
-                "Wall wrestling pressure drill"
+                "Stance + motion (5 min)",
+                "Basic shots (3x10)",
+                "Wall pressure drill"
             ],
             "High School": [
-                "Penetration step series",
-                "Shot → finish chain drilling",
-                "Live situational starts",
-                "Hand fighting rounds"
+                "Shot → finish chain",
+                "Hand fighting rounds",
+                "Live situational starts"
             ],
             "College": [
-                "Chain wrestling sequences",
-                "Scramble recovery drills",
-                "Short offense bursts",
-                "Mat return pressure drill"
+                "Chain wrestling",
+                "Scramble drills",
+                "Short offense bursts"
             ]
         }
 
         st.write("### Plan")
-        for d in drills[level]:
+        for d in base[level]:
             st.write("•", d)
 
 # =========================
-# 📊 STATS
+# STATS
 # =========================
 
 with stats_tab:
@@ -188,12 +194,12 @@ with stats_tab:
         st.metric("Finish Rate", f"{rate:.1f}%")
 
         if rate < 40:
-            st.warning("Work on finishing angles and driving through")
+            st.warning("Work on finishing angles")
         else:
-            st.success("Good offensive efficiency")
+            st.success("Good offense")
 
 # =========================
-# 🍎 NUTRITION
+# NUTRITION
 # =========================
 
 with nutrition_tab:
@@ -209,13 +215,13 @@ with nutrition_tab:
         diff = w - t
 
         if diff <= 0:
-            st.success("You are already on weight")
+            st.success("You are on weight")
         else:
             st.metric("Total Cut", f"{diff:.1f} lbs")
             st.metric("Per Day", f"{diff/d:.2f} lbs/day")
 
-            st.write("### Basic Plan")
-            st.write("• Reduce sugar + processed foods")
-            st.write("• Increase water early, taper before weigh-in")
-            st.write("• Maintain protein for muscle retention")
-            st.write("• Light cardio daily (20–30 min)")
+            st.write("### Plan")
+            st.write("• Reduce sugar + junk food")
+            st.write("• Increase water early, taper late")
+            st.write("• Light cardio daily")
+            st.write("• Keep protein high")
